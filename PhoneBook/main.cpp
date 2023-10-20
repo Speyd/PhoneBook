@@ -11,7 +11,7 @@
 #include <limits>
 using namespace std;
 PhoneBook phone_book;
-const int amountcontact_onepage = 2; // Количество кнтактов на одной странице
+int amountcontact_onepage = 2; // Количество кнтактов на одной странице
 #pragma region SpecialAbilities
 void ClearScrean() {
 #ifdef _WIN32
@@ -30,6 +30,7 @@ void Enter(const int choice ) {
 #pragma region File
 void InputInfoFile(const char* info, PhoneBook& phone_book) {
 	ofstream file(info);
+	file << "Количество контактов на странице:" << amountcontact_onepage << endl << endl;
 	for (int i = 0; i != phone_book.SizeFull_Name(); i++) {
 		if (phone_book.GetFull_Name(i) != "Информация отсутствует")file << "Имя " << i + 1 << " контакта:" << phone_book.GetFull_Name(i) << endl;
 		else file << "Имя " << i + 1 << " контакта:" << endl;
@@ -53,7 +54,8 @@ void OutInfoFile(const char* info, PhoneBook& phone_book) {//ContactInformation
 		if (temp_text.find(':') != temp_text.size()) {
 			for (int i = temp_text.find(':') + 1, index = 0; i != temp_text.size(); i++, index++) inscribed_text[index] = temp_text[i];
 		}
-		if (temp_text.find("Имя") != string::npos)phone_book.SetFull_Name(inscribed_text, 0, 0);
+		if (temp_text.find("Количество контактов на странице") != string::npos)amountcontact_onepage = stoi(inscribed_text);
+		else if (temp_text.find("Имя") != string::npos)phone_book.SetFull_Name(inscribed_text, 0, 0);
 		else if (temp_text.find("Домашний телефон") != string::npos)phone_book.SetHome_Phone(inscribed_text, 0, 0);
 		else if (temp_text.find("Рабочий телефон") != string::npos)phone_book.SetWork_Phone(inscribed_text, 0, 0);
 		else if (temp_text.find("Мобильный") != string::npos)phone_book.SetMobile_Phone(inscribed_text, 0, 0);
@@ -171,8 +173,8 @@ int PrintInfoContact(PhoneBook& phone_book,const int amount_index,
 					else if (page == ceil(amount_index / float(amountcontact_onepage))) {
 						page--;
 						if (amount_index / float(amountcontact_onepage)
-							== ceil(amount_index / float(amountcontact_onepage)))i -= amountcontact_onepage + 2;
-						else i -= amountcontact_onepage + 1;
+							== ceil(amount_index / float(amountcontact_onepage)))i -= amountcontact_onepage + 1;
+						else i -= amountcontact_onepage;
 					}
 				}
 				else if (choice_print == 2 && page != 1 && page != ceil(amount_index / float(amountcontact_onepage))) {
@@ -181,18 +183,30 @@ int PrintInfoContact(PhoneBook& phone_book,const int amount_index,
 				}
 				else if (choice_print == 3) {
 					int delete_index;
-					cout << "Введите номер контакта в телефонной книге что-бы его удалить: ";
+					cout << "Введите номер контакта в телефонной книге что-бы его удалить(0 - что-бы выйти к списку): ";
 					cin >> delete_index;
-					if (delete_index >= 1 && delete_index <= amount_index) {
-						for (int l = 0; l != amount_index; l++) {
-							if (delete_index - 1 == find_contact[l])break;
-							else if (l + 1 == amount_index)delete_index = 0;
+					if (delete_index != 0) {
+						if (delete_index >= 1 && delete_index <= amount_index) {
+							for (int l = 0; l != amount_index; l++) {
+								if (delete_index - 1 == find_contact[l])break;
+								else if (l + 1 == amount_index)delete_index = 0;
+							}
 						}
+						else delete_index = -1;
+						ClearScrean();
+						if (delete_index == 0) {
+							error_input = 2;
+							if (page == ceil(amount_index / float(amountcontact_onepage)) &&
+								amount_index / float(amountcontact_onepage) != amount_index / amountcontact_onepage) {
+
+								i -= ceil(float(amount_index) / (amountcontact_onepage * page));
+							}
+							else i -= amountcontact_onepage;
+						}
+						else return delete_index;
 					}
-					else delete_index = -1;
-					ClearScrean();
-					if (delete_index == 0) {
-						error_input = 2;
+					else {
+						ClearScrean();
 						if (page == ceil(amount_index / float(amountcontact_onepage)) &&
 							amount_index / float(amountcontact_onepage) != amount_index / amountcontact_onepage) {
 
@@ -200,7 +214,6 @@ int PrintInfoContact(PhoneBook& phone_book,const int amount_index,
 						}
 						else i -= amountcontact_onepage;
 					}
-					else return delete_index;
 				}
 			}
 		}
@@ -247,11 +260,33 @@ void DeleteInfoContact(PhoneBook& phone_book, const int choice,int& delete_index
 	else cout << "Контакт не удален!" << endl;
 	Enter(choice);
 }
+void Setting() {
+	int choice_setting = 1;
+	do {
+		ClearScrean();
+		cout << "Настройки\nВыберете действие:\n[1] - Количсество контактов на одной странице\n[0] - Выйти в меню" << endl;
+		if (choice_setting >= 0 && choice_setting <=1) cout << "Введите ваш выбор: ";
+		else cout << "Нету такого выбора!\nВведите ваш выбор снова: ";
+		cin >> choice_setting;
+	} while (choice_setting < 0 || choice_setting > 1);
+	if (choice_setting == 0)return;
+	else if (choice_setting == 1) {
+		int temp_amountcontact = amountcontact_onepage;
+		do {
+			ClearScrean();
+			cout << "Настройки вывод" << endl;
+			if (amountcontact_onepage >= 0) cout << "Введите новое количество контактов на странице(0 что-бы выйти): ";
+			else cout << "Количество контактов на странице не может быть меньше 1!\nСнова введите новое количество контактов на странице(0 что-бы выйти): ";
+			cin >> amountcontact_onepage;
+		} while (amountcontact_onepage < 0);
+		if (amountcontact_onepage == 0)amountcontact_onepage = temp_amountcontact;
+	}
+}
 #pragma endregion
 int main() {
 	setlocale(LC_ALL, "Rus");
 	int choice = 1, delete_index;
-	bool check_save = false;
+	bool check_save = true;
 	vector<int> null_mass;
 	do {
 		ClearScrean();
@@ -268,12 +303,12 @@ int main() {
 		do {
 			ClearScrean();
 			cout << "Выберете действие:\n[1] - Вывести телефонную книгу\n[2] - Добавить новый контакт"<<
-				    "\n[3] - Поиск контактов по ФИО\n[4] - Удалить контакты\n[5] - Сохранить информацию\n[0] - Выйти из программы" << endl;
+				    "\n[3] - Поиск контактов по ФИО\n[4] - Удалить контакты\n[5] - Настройки\n[6] - Сохранить информацию\n[0] - Выйти из программы" << endl;
 			
-			if (choice >= 0 && choice <= 5)cout << "Введите ваш выбор: ";
+			if (choice >= 0 && choice <= 6)cout << "Введите ваш выбор: ";
 			else cout << "Нету такого выбора!\nВведите ваш выбор снова: ";
 			cin >> choice;
-		} while (choice < 0 || choice > 5);
+		} while (choice < 0 || choice > 6);
 		ClearScrean();
 		switch (choice) {
 			case 0: 
@@ -292,7 +327,8 @@ int main() {
 			case 2:AddNewContact(phone_book); check_save = false; break;
 			case 3:FindInformation(phone_book, choice, delete_index); break;
 			case 4:DeleteInfoContact(phone_book, choice, delete_index); check_save = false; break;
-			case 5:InputInfoFile("ContactInformation.txt", phone_book); check_save = true; break;
+			case 5:Setting(); check_save = false; break;
+			case 6:InputInfoFile("ContactInformation.txt", phone_book); check_save = true; break;
 		}
 	} while (choice != 0);
 	return 0;
